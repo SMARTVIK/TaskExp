@@ -1,4 +1,4 @@
-package com.projectbox.uploadfile;
+package com.projectbox.uploadfile.listener;
 
 import okhttp3.MultipartBody;
 import okhttp3.RequestBody;
@@ -12,7 +12,7 @@ import retrofit2.http.Part;
  * Created by adinugroho
  */
 
-interface Service {
+public interface PostImageService {
     @Multipart
     @POST("/")
     Call<ResponseBody> postImage(@Part MultipartBody.Part image, @Part("name") RequestBody name);
