@@ -9,9 +9,11 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
+import android.database.Cursor;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.Uri;
+import android.os.Environment;
 import android.provider.MediaStore;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
@@ -53,7 +55,7 @@ public class ImageUploadActivity extends AppCompatActivity {
     private ImageViewModel imageViewModel;
     public static final int PICK_IMAGE = 100;
     private static final String TAG = ImageUploadActivity.class.getSimpleName();
-    private static final String BASE_URL = "http://192.168.1.37:3000"; //my local server
+    private static final String BASE_URL = "http://192.168.1.82:3000"; //my local server
     PostImageService service;
     private ImagesAdapter imagesAdapter;
     private File cameraImageFile;
@@ -75,6 +77,7 @@ public class ImageUploadActivity extends AppCompatActivity {
         OkHttpClient client = new OkHttpClient.Builder()/*.addInterceptor(interceptor)*/.build();
         // Change base URL to your upload server URL.
         service = new Retrofit.Builder().baseUrl(BASE_URL).client(client).build().create(PostImageService.class);
+
         findViewById(R.id.select_from_gallery).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -159,14 +162,31 @@ public class ImageUploadActivity extends AppCompatActivity {
                 int count = data.getClipData().getItemCount();
                 for (int i = 0; i < count; i++) {
                     Uri imageUri = data.getClipData().getItemAt(i).getUri();
-                    Image image = new Image(imageUri.getPath(), imageUri.getPath(), false);
+                    String path = getRealPathFromUri(this,imageUri);
+                    Image image = new Image(path, path, false);
+//                    Image image = new Image(imageUri.getPath(), imageUri.getPath(), false);
                     imageViewModel.insert(image);
                 }
             } else if (data.getData() != null) { //hey buddy , you selected single image , now handle this
                 Uri selectedImage = data.getData();
-                Image image = new Image(selectedImage.getPath(), selectedImage.getPath(), false);
+                String path = getRealPathFromUri(this,selectedImage);
+                Image image = new Image(path, path, false);
                 imageViewModel.insert(image);
+            }
+        }
+    }
 
+    private String getRealPathFromUri(Context context, Uri contentUri) {
+        Cursor cursor = null;
+        try {
+            String[] proj = {MediaStore.Images.Media.DATA};
+            cursor = context.getContentResolver().query(contentUri, proj, null, null, null);
+            int column_index = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DATA);
+            cursor.moveToFirst();
+            return cursor.getString(column_index);
+        } finally {
+            if (cursor != null) {
+                cursor.close();
             }
         }
     }
@@ -186,6 +206,8 @@ public class ImageUploadActivity extends AppCompatActivity {
             e.printStackTrace();
         }
     }
+
+
 
     private void uploadImage(final Image selectedImage) {
         File file = getFile(selectedImage);

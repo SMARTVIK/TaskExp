@@ -13,7 +13,6 @@ public class Image {
     }
 
     @NonNull
-
     public String getId() {
         return id;
     }
